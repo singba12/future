@@ -272,7 +272,7 @@ async function fetchAndDisplayData() {
 	let totalProfitOrLoss = 0;
     // Premier try
     try {
-        const response = await fetch('http://localhost:3000/calculate', {
+        const response = await fetch('http://localhost:10000/calculate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbol, dailyInvestment, startDate, endDate })
@@ -293,7 +293,7 @@ async function fetchAndDisplayData() {
 
     // Deuxième try
     try {
-        const response = await fetch('http://localhost:3000/calculate', {
+        const response = await fetch('http://localhost:10000/calculate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbol: symbol1, dailyInvestment, startDate, endDate })
