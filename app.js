@@ -5,8 +5,8 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-
-app.use(cors());
+app.use(cors({ origin: 'https://future-9sfn.onrender.com' }));
+//app.use(cors());
 app.use(bodyParser.json());
 
 // Fonction pour convertir une date en timestamp Unix (ms)
