@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Bénéfice Crypto</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Styles pour la page de chargement */
+        #loading-screen {
+            display: none; /* Caché par défaut */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Transparence */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    
+		
+		/* Style général */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c2c2c; /* Couleur de fond pour le mode nuit */
+            color: #ddd; /* Couleur de texte claire */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #3e3e3e; /* Fond de la boîte principale */
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Ombre plus sombre pour le mode nuit */
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            color: #fff; /* Texte clair */
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"], button {
+            width: 95%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            background-color: #555; /* Fond des champs d'input */
+            color: #fff; /* Texte des champs en blanc */
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Style pour le switch */
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .switch-container label {
+            font-size: 1.2em;
+            color: #bbb; /* Couleur du texte pour le switch */
+        }
+
+        .switch-container input[type="checkbox"] {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            appearance: none;
+            background-color: #ccc;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .switch-container input[type="checkbox"]:checked {
+            background-color: #4CAF50;
+        }
+
+        .switch-container input[type="checkbox"]:before {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .switch-container input[type="checkbox"]:checked:before {
+            left: 29px;
+        }
+
+        /* Mode tableau (par défaut) */
+        #defaultMode {
+            display: block;
+        }
+
+        /* Mode résultats */
+        #resultMode {
+            display: none;
+        }
+
+        /* Style vertical du tableau */
+        .data-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        .data-container div {
+            margin: 10px 0;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .data-container div span {
+            font-weight: bold;
+            color: #ddd; /* Texte clair */
+        }
+
+        #results {
+            background-color: #444; /* Fond de la section des résultats */
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #fff; /* Texte en blanc */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculateur de Bénéfice Crypto</h1>
+
+        <!-- Switch pour changer de mode -->
+        <div class="switch-container">
+            <label for="modeSwitch">Mode Changer :</label>
+            <input type="checkbox" id="modeSwitch" onchange="toggleMode()">
+        </div>
+
+        <!-- Mode tableau (par défaut) -->
+        <div id="defaultMode">
+            <div class="data-container"> 
+				<div><span>Date initiale:</span> 25/11/2024</div>
+                <div><span>Date d'aujourd'hui:</span> <span id="currentDate"></span></div>
+				<div><span>Investissement par Pair</span> <span> 4 USDT</span></div>
+				<hr style="border: 1px solid black; width: 50%; margin: 20px auto;">
+				<div><span>Pair</span> BTCUSDT </div>
+				<div><span>Prix initial:</span> 93010 USDT</div>
+                <div><span>Prix actuel:</span><span id="pActB"> 0 USDT</span></div>
+                <div><span>Bénéfice / Perte:</span> <span id="profitLossB">0 USDT</span> </div>
+				<hr style="border: 1px solid black; width: 50%; margin: 20px auto;">
+				<div><span>Pair</span> ETHUSDT </div>
+                <div><span>Prix initial:</span> 3414 USDT</div>
+                <div><span>Prix actuel:</span><span id="pActE"> 0 USDT</span></div>
+                <div><span>Bénéfice / Perte:</span> <span id="profitLossE">0 USDT</span> </div>
+				<hr style="border: 1px solid black; width: 50%; margin: 20px auto;">
+				<div><span>TOTAL BENEFICE/PERTE:</span> <span id="total">0 USDT</span> </div>
+            </div>
+        </div>
+
+        <!-- Mode résultats (avec formulaire) -->
+        <div id="resultMode">
+            <h2>Formulaire de calcul</h2>
+            <form id="calcForm">
+                <input type="text" id="symbol" placeholder="Cryptomonnaie (ex: BTCUSDT)" required>
+                <input type="number" id="dailyInvestment" placeholder="Montant journalier (en USDT)" required>
+                <input type="date" id="startDate" required>
+                <input type="date" id="endDate" required>
+                <button type="submit">Calculer</button>
+            </form>
+
+            <div id="results"></div>
+        </div>
+    </div>
+	 <div id="loading-screen">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        // Fonction pour basculer entre les modes
+        function toggleMode() {
+            const defaultMode = document.getElementById('defaultMode');
+            const resultMode = document.getElementById('resultMode');
+            const modeSwitch = document.getElementById('modeSwitch');
+
+            if (modeSwitch.checked) {
+                defaultMode.style.display = "none";
+                resultMode.style.display = "block";
+            } else {
+                defaultMode.style.display = "block";
+                resultMode.style.display = "none";
+            }
+        }
+
+        // Afficher la date actuelle dans le mode tableau
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+
+        
+
+        // Initialisation : Afficher le mode tableau par défaut
+        window.onload = function() {
+            document.getElementById('defaultMode').style.display = "block";
+            document.getElementById('resultMode').style.display = "none";
+			setInterval(fetchAndDisplayData,10000);
+        };
+		document.getElementById('calcForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const loadingScreen = document.getElementById('loading-screen');
+			loadingScreen.style.display = 'flex'; // Affiche l'écran de chargement
+			setTimeout(function(){loadingScreen.style.display = 'none'}, 3000)
+        });
+		
+async function fetchAndDisplayData() {
+    const symbol = "BTCUSDT";
+    const dailyInvestment = 4;
+    const startDate = "2024-11-25";
+    const endDate = new Date().toISOString().split('T')[0];
+    const symbol1 = "ETHUSDT";
+    console.log("started");
+	let totalProfitOrLoss = 0;
+    // Premier try
+    try {
+        const response = await fetch('http://localhost:3000/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol, dailyInvestment, startDate, endDate })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            document.getElementById('pActB').innerHTML = `${result.lastPrice.toFixed(2)} USDT`;
+            document.getElementById('profitLossB').innerHTML = `${result.profitOrLoss >= 0 ? '+' : ''}${result.profitOrLoss.toFixed(2)} USDT (${result.percentageChange}%)`;
+			 totalProfitOrLoss += result.profitOrLoss;
+        } else {
+            document.getElementById('resultsBTC').innerHTML = `<p style="color:red;">Erreur : ${result.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById('resultsBTC').innerHTML = `<p style="color:red;">Erreur : ${error.message}</p>`;
+    }
+
+    // Deuxième try
+    try {
+        const response = await fetch('http://localhost:3000/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol: symbol1, dailyInvestment, startDate, endDate })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            document.getElementById('pActE').innerHTML = `${result.lastPrice.toFixed(2)} USDT`;
+            document.getElementById('profitLossE').innerHTML = `${result.profitOrLoss >= 0 ? '+' : ''}${result.profitOrLoss.toFixed(2)} USDT (${result.percentageChange}%)`;
+			totalProfitOrLoss += result.profitOrLoss; 
+        } else {
+            document.getElementById('resultsETH').innerHTML = `<p style="color:red;">Erreur : ${result.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById('resultsETH').innerHTML = `<p style="color:red;">Erreur : ${error.message}</p>`;
+    }
+	document.getElementById('total').innerHTML = `${totalProfitOrLoss >= 0 ? '+' : ''}${totalProfitOrLoss.toFixed(2)} USDT`;
+
+}
+
+
+
+    </script>
+</body>
+</html>
