@@ -1,12 +1,13 @@
 const express = require('express');
 const axios = require('axios');
-const bodyParser = require('body-parser');														
+const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
+
+// Configuration CORS (mettez l'origine exacte si connue, sinon laissez *)
 app.use(cors({ origin: 'https://future-9sfn.onrender.com' }));
-//app.use(cors());
 app.use(bodyParser.json());
 
 // Fonction pour convertir une date en timestamp Unix (ms)
@@ -34,6 +35,7 @@ app.post('/calculate', async (req, res) => {
     const { symbol, dailyInvestment, startDate, endDate } = req.body;
 
     try {
+        // Validation des entrées utilisateur
         validateInput(symbol, dailyInvestment, startDate, endDate);
 
         const startTime = toTimestamp(startDate);
@@ -42,40 +44,48 @@ app.post('/calculate', async (req, res) => {
         let totalBTC = 0;
         let currentStartTime = startTime;
         let lastPrice = 0;
-        let startPrice = null; // Initialiser startPrice à null
+        let startPrice = null; // Prix initial de la cryptomonnaie
 
+        // Récupération des données via l'API Binance
         while (currentStartTime < endTime) {
-            const response = await axios.get('https://api.binance.com/api/v3/klines', {
-                params: {
-                    symbol: symbol,
-                    interval: '1d',
-                    startTime: currentStartTime,
-                    endTime: Math.min(currentStartTime + 1000 * 86400000, endTime),
-                    limit: 1000
+            try {
+                const response = await axios.get('https://api.binance.com/api/v3/klines', {
+                    params: {
+                        symbol: symbol,
+                        interval: '1d',
+                        startTime: currentStartTime,
+                        endTime: Math.min(currentStartTime + 1000 * 86400000, endTime),
+                        limit: 1000
+                    },
+                    timeout: 10000 // Timeout de 10 secondes
+                });
+
+                const data = response.data;
+
+                // Vérifiez si des données ont été récupérées
+                if (data.length === 0) {
+                    break; // Sortir si aucune donnée n'est disponible
                 }
-            });
 
-            const data = response.data;
+                for (const day of data) {
+                    const closePrice = parseFloat(day[4]);
+                    totalBTC += dailyInvestment / closePrice;
+                    totalInvested += dailyInvestment;
+                    lastPrice = closePrice;
 
-            // Vérifiez si des données ont été récupérées
-            if (data.length === 0) {
-                break; // Sortir si aucune donnée n'est disponible
-            }
-
-            for (const day of data) {
-                const closePrice = parseFloat(day[4]);
-                totalBTC += dailyInvestment / closePrice;
-                totalInvested += dailyInvestment;
-                lastPrice = closePrice;
-
-                // Assigner le prix initial uniquement lors de la première journée d'investissement
-                if (startPrice === null) {
-                    startPrice = closePrice; // Assignation du prix initial
+                    // Assigner le prix initial uniquement lors de la première journée d'investissement
+                    if (startPrice === null) {
+                        startPrice = closePrice;
+                    }
                 }
-            }
 
-            // Avancer dans la période
-            currentStartTime += 1000 * 86400000;
+                // Avancer dans la période
+                currentStartTime += 1000 * 86400000;
+
+            } catch (apiError) {
+                console.error("Erreur de l'API Binance :", apiError.message);
+                return res.status(500).json({ error: "Erreur lors de la récupération des données de Binance." });
+            }
         }
 
         // Vérifiez que startPrice a été assigné
@@ -83,6 +93,7 @@ app.post('/calculate', async (req, res) => {
             return res.status(400).json({ error: "Aucune donnée disponible pour la période spécifiée." });
         }
 
+        // Calcul du portefeuille
         const portfolioValue = totalBTC * lastPrice;
         const profitOrLoss = portfolioValue - totalInvested;
 
@@ -100,7 +111,7 @@ app.post('/calculate', async (req, res) => {
     }
 });
 
-// Démarrer le serveur
+// Lancement du serveur
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
